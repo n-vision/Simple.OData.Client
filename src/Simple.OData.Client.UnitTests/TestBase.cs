@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using Xunit;
+using Xunit.Abstractions;
 #if NET452 && !MOCK_HTTP
 using Simple.OData.NorthwindModel;
 #endif
@@ -22,8 +23,11 @@ namespace Simple.OData.Client.Tests
         protected IODataClient _client;
         protected readonly bool _readOnlyTests;
 
-        protected TestBase(bool readOnlyTests = false)
+        private readonly ITestOutputHelper _output;
+
+        protected TestBase(bool readOnlyTests = false, ITestOutputHelper output = null)
         {
+            _output = output;
             _readOnlyTests = readOnlyTests;
 #if NET452 && !MOCK_HTTP
             _service = new TestService(typeof(NorthwindService));
@@ -58,7 +62,16 @@ namespace Simple.OData.Client.Tests
             {
                 BaseUri = _serviceUri,
                 MetadataDocument = GetMetadataDocument(),
-                OnTrace = (x, y) => Console.WriteLine(string.Format(x, y)),
+                TraceFilter = ODataTrace.All,
+                OnTrace = (x, y) =>
+                {
+                    if (_output != null)
+                    {
+                        _output.WriteLine(string.Format(x, y));
+                    }
+
+                    Console.WriteLine(string.Format(x, y));
+                },
             };
         }
 
