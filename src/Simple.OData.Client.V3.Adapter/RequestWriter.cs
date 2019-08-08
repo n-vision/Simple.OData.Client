@@ -82,7 +82,7 @@ namespace Simple.OData.Client.V3.Adapter
                 {
                     Url = Utils.CreateAbsoluteUri(_session.Settings.BaseUri.AbsoluteUri, linkIdent)
                 };
-                messageWriter.WriteEntityReferenceLink(link);
+                await messageWriter.WriteEntityReferenceLinkAsync(link).ConfigureAwait(false);
                 return IsBatch ? null : await message.GetStreamAsync().ConfigureAwait(false);
             }
         }
