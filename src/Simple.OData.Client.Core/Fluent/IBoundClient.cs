@@ -284,6 +284,7 @@ namespace Simple.OData.Client
         /// <typeparam name="U">The linked entry type.</typeparam>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>();
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -291,12 +292,14 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
         /// <param name="linkName">Name of the link.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync(string linkName);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -304,6 +307,7 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync(string linkName, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -311,6 +315,7 @@ namespace Simple.OData.Client
         /// <param name="expression">The link expression.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(Expression<Func<T, U>> expression);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -319,12 +324,14 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(Expression<Func<T, U>> expression, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
         /// <param name="expression">The link expression.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync(ODataExpression expression);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -332,6 +339,7 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync(ODataExpression expression, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -339,6 +347,7 @@ namespace Simple.OData.Client
         /// <param name="linkedEntryKey">The linked entry key.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(U linkedEntryKey);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -347,6 +356,7 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(U linkedEntryKey, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -355,6 +365,7 @@ namespace Simple.OData.Client
         /// <param name="linkName">Name of the link.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(U linkedEntryKey, string linkName);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -364,6 +375,7 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(U linkedEntryKey, string linkName, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -372,6 +384,7 @@ namespace Simple.OData.Client
         /// <param name="linkedEntryKey">The linked entry key.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(Expression<Func<T, U>> expression, U linkedEntryKey);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -381,6 +394,7 @@ namespace Simple.OData.Client
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync<U>(Expression<Func<T, U>> expression, U linkedEntryKey, CancellationToken cancellationToken);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -388,6 +402,7 @@ namespace Simple.OData.Client
         /// <param name="linkedEntryKey">The linked entry key.</param>
         /// <returns>Task instance.</returns>
         Task UnlinkEntryAsync(ODataExpression expression, IDictionary<string, object> linkedEntryKey);
+
         /// <summary>
         /// Deletes a link between entries.
         /// </summary>
@@ -403,12 +418,14 @@ namespace Simple.OData.Client
         /// <param name="derivedCollectionName">Name of the derived collection.</param>
         /// <returns>Self.</returns>
         IBoundClient<IDictionary<string, object>> As(string derivedCollectionName);
+
         /// <summary>
         /// Casts the collection of base entities as the collection of derived ones.
         /// </summary>
         /// <param name="derivedCollectionName">Name of the derived collection.</param>
         /// <returns>Self.</returns>
         IBoundClient<U> As<U>(string derivedCollectionName = null) where U : class;
+
         /// <summary>
         /// Casts the collection of base entities as the collection of derived ones.
         /// </summary>
@@ -422,24 +439,28 @@ namespace Simple.OData.Client
         /// <param name="value">The value to update the entry with.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(object value);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
         /// <param name="value">The value to update the entry with.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(IDictionary<string, object> value);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
         /// <param name="entry">The entry with the updated value.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(T entry);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
         /// <param name="value">The value to update the entry with.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(params ODataExpression[] value);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -447,6 +468,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(object value, IEnumerable<string> associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -454,6 +476,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(object value, params string[] associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -461,6 +484,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(object value, params ODataExpression[] associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -468,6 +492,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(object value, Expression<Func<T, object>> associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -475,6 +500,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(IDictionary<string, object> value, IEnumerable<string> associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -482,6 +508,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(IDictionary<string, object> value, params string[] associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>
@@ -489,6 +516,7 @@ namespace Simple.OData.Client
         /// <param name="associationsToSetByValue">The list of associations to be passed by value for deep insert/update.</param>
         /// <returns>Self.</returns>
         IBoundClient<T> Set(T entry, params ODataExpression[] associationsToSetByValue);
+
         /// <summary>
         /// Sets the specified entry value for update.
         /// </summary>

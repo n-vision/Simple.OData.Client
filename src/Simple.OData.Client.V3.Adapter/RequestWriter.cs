@@ -40,7 +40,7 @@ namespace Simple.OData.Client.V3.Adapter
 
             using (var messageWriter = new ODataMessageWriter(message, GetWriterSettings(), model))
             {
-                var contentId = _deferredBatchWriter != null ? _deferredBatchWriter.Value.GetContentId(entryData, null) : null;
+                var contentId = _deferredBatchWriter?.Value.GetContentId(entryData, null);
                 //var entityCollection = _session.Metadata.GetEntityCollection(collection);
                 var entityCollection = _session.Metadata.NavigateToCollection(collection);
                 var entryDetails = _session.Metadata.ParseEntryDetails(entityCollection.Name, entryData, contentId);
@@ -83,11 +83,7 @@ namespace Simple.OData.Client.V3.Adapter
                     Url = Utils.CreateAbsoluteUri(_session.Settings.BaseUri.AbsoluteUri, linkIdent)
                 };
                 messageWriter.WriteEntityReferenceLink(link);
-
-                if (IsBatch)
-                    return null;
-
-                return await message.GetStreamAsync().ConfigureAwait(false);
+                return IsBatch ? null : await message.GetStreamAsync().ConfigureAwait(false);
             }
         }
 
@@ -112,8 +108,8 @@ namespace Simple.OData.Client.V3.Adapter
                     .SelectMany(x => (x as IEdmEntityContainer).FunctionImports())
                     .BestMatch(x => x.Name, actionName, _session.Settings.NameMatchResolver);
                 var parameterWriter = await messageWriter.CreateODataParameterWriterAsync(action).ConfigureAwait(false);
-                await parameterWriter.WriteStartAsync().ConfigureAwait(false);
 
+                await parameterWriter.WriteStartAsync().ConfigureAwait(false);
 
                 foreach (var parameter in parameters)
                 {
@@ -125,11 +121,7 @@ namespace Simple.OData.Client.V3.Adapter
                 }
 
                 await parameterWriter.WriteEndAsync().ConfigureAwait(false);
-
-                if (IsBatch)
-                    return null;
-
-                return await message.GetStreamAsync().ConfigureAwait(false);
+                return IsBatch ? null : await message.GetStreamAsync().ConfigureAwait(false);
             }
         }
 
@@ -345,7 +337,7 @@ namespace Simple.OData.Client.V3.Adapter
                     };
 
                 case EdmTypeKind.Primitive:
-                    var mappedTypes = _typeMap.Where(x => x.Value == (propertyType.Definition as IEdmPrimitiveType).PrimitiveKind);
+                    var mappedTypes = _typeMap.Where(x => x.Value == ((IEdmPrimitiveType)propertyType.Definition).PrimitiveKind);
                     if (mappedTypes.Any())
                     {
                         foreach (var mappedType in mappedTypes)

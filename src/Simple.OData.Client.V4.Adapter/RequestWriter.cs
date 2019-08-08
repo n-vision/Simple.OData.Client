@@ -150,7 +150,7 @@ namespace Simple.OData.Client.V4.Adapter
         protected override async Task<Stream> WriteLinkContentAsync(string method, string commandText, string linkIdent)
         {
             var message = IsBatch
-                ? await CreateBatchOperationMessageAsync(method, null, null, commandText, false).ConfigureAwait(false) 
+                ? await CreateBatchOperationMessageAsync(method, null, null, commandText, false).ConfigureAwait(false)
                 : new ODataRequestMessage();
 
             using (var messageWriter = new ODataMessageWriter(message, GetWriterSettings(), _model))
@@ -229,7 +229,7 @@ namespace Simple.OData.Client.V4.Adapter
                     break;
 
                 case EdmTypeKind.Untyped:
-                    await parameterWriter.WriteValueAsync(paramName, new ODataUntypedValue {RawValue = paramValue.ToString()}).ConfigureAwait(false);
+                    await parameterWriter.WriteValueAsync(paramName, new ODataUntypedValue { RawValue = paramValue.ToString() }).ConfigureAwait(false);
                     break;
 
                 case EdmTypeKind.Entity:
@@ -309,14 +309,78 @@ namespace Simple.OData.Client.V4.Adapter
 
         protected override void AssignHeaders(ODataRequest request)
         {
-            if (request.ResultRequired)
+            request.Headers.Add(HttpLiteral.Prefer, request.ResultRequired ? HttpLiteral.ReturnRepresentation : HttpLiteral.ReturnMinimal);
+        }
+
+        private ODataMessageWriterSettings GetWriterSettings(ODataFormat preferredContentType = null)
+        {
+            var settings = new ODataMessageWriterSettings()
             {
-                request.Headers.Add(HttpLiteral.Prefer, HttpLiteral.ReturnRepresentation);
-            }
-            else
+                ODataUri = new ODataUri()
+                {
+                    RequestUri = _session.Settings.BaseUri,
+                },
+                EnableMessageStreamDisposal = IsBatch,
+            };
+            var contentType = preferredContentType ?? ODataFormat.Json;
+            settings.SetContentType(contentType);
+            return settings;
+        }
+
+        private ODataResource CreateODataEntry(string typeName, IDictionary<string, object> properties, ODataResource root)
+        {
+            var entry = new ODataResource { TypeName = typeName };
+            root = root ?? entry;
+
+            var entryType = _model.FindDeclaredType(entry.TypeName);
+            var typeProperties = typeof(IEdmEntityType).IsTypeAssignableFrom(entryType.GetType())
+                ? (entryType as IEdmEntityType).Properties().ToList()
+                : (entryType as IEdmComplexType).Properties().ToList();
+
+            string findMatchingPropertyName(string name)
             {
-                request.Headers.Add(HttpLiteral.Prefer, HttpLiteral.ReturnMinimal);
+                var property = typeProperties.BestMatch(y => y.Name, name, _session.Settings.NameMatchResolver);
+                return property != null ? property.Name : name;
             }
+
+            IEdmTypeReference findMatchingPropertyType(string name)
+            {
+                var property = typeProperties.BestMatch(y => y.Name, name, _session.Settings.NameMatchResolver);
+                return property?.Type;
+            }
+
+            bool isStructural(IEdmTypeReference type) =>
+                type != null && type.TypeKind() == EdmTypeKind.Complex;
+            bool isStructuralCollection(IEdmTypeReference type) =>
+                type != null && type.TypeKind() == EdmTypeKind.Collection && type.AsCollection().ElementType().TypeKind() == EdmTypeKind.Complex;
+            bool isPrimitive(IEdmTypeReference type) =>
+                !isStructural(type) && !isStructuralCollection(type);
+
+            var resourceEntry = new ResourceProperties(entry);
+            entry.Properties = properties
+                .Where(x => isPrimitive(findMatchingPropertyType(x.Key)))
+                .Select(x => new ODataProperty
+                {
+                    Name = findMatchingPropertyName(x.Key),
+                    Value = GetPropertyValue(typeProperties, x.Key, x.Value, root)
+                }).ToList();
+            resourceEntry.CollectionProperties = properties
+                .Where(x => isStructuralCollection(findMatchingPropertyType(x.Key)))
+                .Select(x => new KeyValuePair<string, ODataCollectionValue>(
+                    findMatchingPropertyName(x.Key),
+                    GetPropertyValue(typeProperties, x.Key, x.Value, root) as ODataCollectionValue))
+                .ToDictionary();
+            resourceEntry.StructuralProperties = properties
+                .Where(x => isStructural(findMatchingPropertyType(x.Key)))
+                .Select(x => new KeyValuePair<string, ODataResource>(
+                    findMatchingPropertyName(x.Key),
+                    GetPropertyValue(typeProperties, x.Key, x.Value, root) as ODataResource))
+                .ToDictionary();
+            _resourceEntryMap.Add(entry, resourceEntry);
+            if (root != null && _resourceEntries.TryGetValue(root, out var entries))
+                entries.Add(entry);
+
+            return entry;
         }
 
         private async Task<IODataRequestMessageAsync> CreateBatchOperationMessageAsync(string method, string collection, IDictionary<string, object> entryData, string commandText, bool resultRequired)
@@ -385,77 +449,6 @@ namespace Simple.OData.Client.V4.Adapter
                 return navigationProperty.Type.Definition as IEdmEntityType;
         }
 
-        private ODataMessageWriterSettings GetWriterSettings(ODataFormat preferredContentType = null)
-        {
-            var settings = new ODataMessageWriterSettings()
-            {
-                ODataUri = new ODataUri()
-                {
-                    RequestUri = _session.Settings.BaseUri,
-                },
-                EnableMessageStreamDisposal = IsBatch,
-            };
-            var contentType = preferredContentType ?? ODataFormat.Json;
-            settings.SetContentType(contentType);
-            return settings;
-        }
-
-        private ODataResource CreateODataEntry(string typeName, IDictionary<string, object> properties, ODataResource root)
-        {
-            var entry = new ODataResource { TypeName = typeName };
-            root = root ?? entry;
-
-            var entryType = _model.FindDeclaredType(entry.TypeName);
-            var typeProperties = typeof(IEdmEntityType).IsTypeAssignableFrom(entryType.GetType()) 
-                ? (entryType as IEdmEntityType).Properties().ToList() 
-                : (entryType as IEdmComplexType).Properties().ToList();
-
-            string findMatchingPropertyName(string name)
-            {
-                var property = typeProperties.BestMatch(y => y.Name, name, _session.Settings.NameMatchResolver);
-                return property != null ? property.Name : name;
-            }
-
-            IEdmTypeReference findMatchingPropertyType(string name)
-            {
-                var property = typeProperties.BestMatch(y => y.Name, name, _session.Settings.NameMatchResolver);
-                return property?.Type;
-            }
-
-            bool isStructural(IEdmTypeReference type) => 
-                type != null && type.TypeKind() == EdmTypeKind.Complex;
-            bool isStructuralCollection(IEdmTypeReference type) => 
-                type != null && type.TypeKind() == EdmTypeKind.Collection && type.AsCollection().ElementType().TypeKind() == EdmTypeKind.Complex;
-            bool isPrimitive(IEdmTypeReference type) => 
-                !isStructural(type) && !isStructuralCollection(type);
-
-            var resourceEntry = new ResourceProperties(entry);
-            entry.Properties = properties
-                .Where(x => isPrimitive(findMatchingPropertyType(x.Key)))
-                .Select(x => new ODataProperty
-            {
-                Name = findMatchingPropertyName(x.Key),
-                Value = GetPropertyValue(typeProperties, x.Key, x.Value, root)
-            }).ToList();
-            resourceEntry.CollectionProperties = properties
-                .Where(x => isStructuralCollection(findMatchingPropertyType(x.Key)))
-                .Select(x => new KeyValuePair<string, ODataCollectionValue>(
-                    findMatchingPropertyName(x.Key),
-                    GetPropertyValue(typeProperties, x.Key, x.Value, root) as ODataCollectionValue))
-                .ToDictionary();
-            resourceEntry.StructuralProperties = properties
-                .Where(x => isStructural(findMatchingPropertyType(x.Key)))
-                .Select(x => new KeyValuePair<string, ODataResource>(
-                    findMatchingPropertyName(x.Key),
-                    GetPropertyValue(typeProperties, x.Key, x.Value, root) as ODataResource))
-                .ToDictionary();
-            _resourceEntryMap.Add(entry, resourceEntry);
-            if (root != null && _resourceEntries.TryGetValue(root, out var entries))
-                    entries.Add(entry);
-
-            return entry;
-        }
-
         private object GetPropertyValue(IEnumerable<IEdmProperty> properties, string key, object value, ODataResource root)
         {
             var property = properties.BestMatch(x => x.Name, key, _session.Settings.NameMatchResolver);
@@ -485,7 +478,7 @@ namespace Simple.OData.Client.V4.Adapter
                     };
 
                 case EdmTypeKind.Primitive:
-                    var mappedTypes = _typeMap.Where(x => x.Value == ((IEdmPrimitiveType) propertyType.Definition).PrimitiveKind);
+                    var mappedTypes = _typeMap.Where(x => x.Value == ((IEdmPrimitiveType)propertyType.Definition).PrimitiveKind);
                     if (mappedTypes.Any())
                     {
                         foreach (var mappedType in mappedTypes)
@@ -503,7 +496,7 @@ namespace Simple.OData.Client.V4.Adapter
                     return new ODataEnumValue(value.ToString());
 
                 case EdmTypeKind.Untyped:
-                    return new ODataUntypedValue{ RawValue = value.ToString() };
+                    return new ODataUntypedValue { RawValue = value.ToString() };
 
                 case EdmTypeKind.None:
                     if (Converter.HasObjectConverter(value.GetType()))
