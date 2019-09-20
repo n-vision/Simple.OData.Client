@@ -25,7 +25,7 @@ namespace Simple.OData.Client.V3.Adapter
             _model = model;
         }
 
-        protected override async Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, bool resultRequired)
+        protected override async Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, IList<string> includedProperties, bool resultRequired)
         {
             IODataRequestMessageAsync message = IsBatch
                 ? await CreateBatchOperationMessageAsync(method, collection, entryData, commandText, resultRequired).ConfigureAwait(false) 
@@ -56,7 +56,7 @@ namespace Simple.OData.Client.V3.Adapter
                     {
                         if (link.Value.Any(x => x.LinkData != null))
                         {
-                            WriteLink(entryWriter, entry, link.Key, link.Value);
+                            WriteLink(entryWriter, entry, link.Key, link.Value, includedProperties.Contains(link.Key, StringComparer.OrdinalIgnoreCase));
                         }
                     }
                 }
@@ -98,7 +98,7 @@ namespace Simple.OData.Client.V3.Adapter
         protected override async Task<Stream> WriteActionContentAsync(string method, string commandText, string actionName, string boundTypeName, IDictionary<string, object> parameters)
         {
             IODataRequestMessageAsync message = IsBatch
-                ? await CreateBatchOperationMessageAsync(method, null, null, commandText, true).ConfigureAwait(false) 
+                ? await CreateBatchOperationMessageAsync(method, null, null, commandText, true).ConfigureAwait(false)
                 : new ODataRequestMessage();
 
             using (var messageWriter = new ODataMessageWriter(message, GetWriterSettings(ODataFormat.Json), _model))
@@ -138,7 +138,7 @@ namespace Simple.OData.Client.V3.Adapter
                 case EdmTypeKind.Collection:
                     var collectionWriter = await parameterWriter.CreateCollectionWriterAsync(paramName).ConfigureAwait(false);
                     await collectionWriter.WriteStartAsync(new ODataCollectionStart()).ConfigureAwait(false);
-                    foreach (var item in (IEnumerable) paramValue)
+                    foreach (var item in (IEnumerable)paramValue)
                     {
                         await collectionWriter.WriteItemAsync(item).ConfigureAwait(false);
                     }
@@ -240,7 +240,7 @@ namespace Simple.OData.Client.V3.Adapter
             return message;
         }
 
-        private void WriteLink(ODataWriter entryWriter, Microsoft.Data.OData.ODataEntry entry, string linkName, IEnumerable<ReferenceLink> links)
+        private void WriteLink(ODataWriter entryWriter, Microsoft.Data.OData.ODataEntry entry, string linkName, IEnumerable<ReferenceLink> links, bool includeEntity)
         {
             var navigationProperty = (_model.FindDeclaredType(entry.TypeName) as IEdmEntityType).NavigationProperties()
                 .BestMatch(x => x.Name, linkName, _session.Settings.NameMatchResolver);
@@ -283,8 +283,41 @@ namespace Simple.OData.Client.V3.Adapter
                     Url = Utils.CreateAbsoluteUri(_session.Settings.BaseUri.AbsoluteUri, linkUri)
                 };
 
+                if (includeEntity)
+                {
+                    var entry2 = CreateODataEntry(referenceLink.LinkData.GetType().Name, linkEntry);
+
+                    if (isCollection)
+                    {
+                        entryWriter.WriteStart(new ODataFeed() { Id = linkName });
+                    }
+
+                    entryWriter.WriteStart(entry2);
+                    //entryWriter.WriteEnd();
+
+                    if (isCollection)
+                    {
+                        entryWriter.WriteEnd();
+                    }
+                }
+
                 entryWriter.WriteEntityReferenceLink(link);
             }
+
+            /*****/
+
+            //if (isCollection)
+            //{
+            //    entryWriter.WriteStart(new ODataFeed() { Id = "TestSet" });
+
+            //    entryWriter.WriteStart(new Microsoft.Data.OData.ODataEntry());
+
+            //    entryWriter.WriteEnd();
+
+            //    entryWriter.WriteEnd();
+            //}
+
+            /*****/
 
             entryWriter.WriteEnd();
         }

@@ -36,6 +36,8 @@ namespace Simple.OData.Client
         public IEnumerable<string> MediaProperties { get; set; }
         public ConcurrentDictionary<object, IDictionary<string, object>> BatchEntries { get; set; }
 
+        public List<string> IncludedNavigationEntries { get; private set; }
+
         public CommandDetails(Session session, FluentCommand parent, ConcurrentDictionary<object, IDictionary<string, object>> batchEntries)
         {
             this.Session = session;
@@ -47,6 +49,8 @@ namespace Simple.OData.Client
             this.OrderbyColumns = new List<KeyValuePair<string, bool>>();
             this.MediaProperties = new List<string>();
             this.BatchEntries = batchEntries;
+
+            this.IncludedNavigationEntries = new List<string>();
         }
 
         public CommandDetails(CommandDetails details)
@@ -81,6 +85,8 @@ namespace Simple.OData.Client
             this.QueryOptionsKeyValues = details.QueryOptionsKeyValues;
             this.QueryOptionsExpression = details.QueryOptionsExpression;
             this.BatchEntries = details.BatchEntries;
+
+            this.IncludedNavigationEntries = details.IncludedNavigationEntries;
         }
     }
 }

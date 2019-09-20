@@ -51,7 +51,7 @@ namespace Simple.OData.Client
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
             return await _session.Adapter.GetRequestWriter(_lazyBatchWriter)
-                .CreateInsertRequestAsync(_command.QualifiedEntityCollectionName, commandText, entryData, resultRequired).ConfigureAwait(false);
+                .CreateInsertRequestAsync(_command.QualifiedEntityCollectionName, commandText, entryData, _command.Details.IncludedNavigationEntries, resultRequired).ConfigureAwait(false);
         }
 
         public async Task<ODataRequest> UpdateRequestAsync(bool resultRequired, CancellationToken cancellationToken)

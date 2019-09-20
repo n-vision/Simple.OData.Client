@@ -45,6 +45,12 @@ namespace Simple.OData.Client
             return new BoundClient<IDictionary<string, object>>(_client, _session, _parentCommand, this.Command, _dynamicResults);
         }
 
+        public IBoundClient<T> Include(Expression<Func<T, object>> expression)
+        {
+            this.Command.Include(((MemberExpression)expression.Body).Member.Name);
+            return this;
+        }
+
         public IBoundClient<T> Set(object value)
         {
             this.Command.Set(value);

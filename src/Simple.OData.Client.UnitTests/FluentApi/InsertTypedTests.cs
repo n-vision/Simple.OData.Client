@@ -2,11 +2,16 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Simple.OData.Client.Tests.FluentApi
 {
     public class InsertTypedTests : TestBase
     {
+        public InsertTypedTests(ITestOutputHelper output)
+            : base(output: output)
+        { }
+
         [Fact]
         public async Task Insert()
         {
@@ -38,7 +43,7 @@ namespace Simple.OData.Client.Tests.FluentApi
             var client = new ODataClient(CreateDefaultSettings().WithHttpMock());
             var product = await client
                 .For<Product>()
-                .Set(new Product { ProductName = "Test1", UnitPrice = 18m, MappedEnglishName  = "EnglishTest" })
+                .Set(new Product { ProductName = "Test1", UnitPrice = 18m, MappedEnglishName = "EnglishTest" })
                 .InsertEntryAsync();
 
             Assert.Equal("Test1", product.ProductName);
@@ -92,12 +97,61 @@ namespace Simple.OData.Client.Tests.FluentApi
         }
 
         [Fact]
+        public async Task InsertDeepProductWithCategoryByAssociation()
+        {
+            var client = new ODataClient(CreateDefaultSettings().WithHttpMock());
+
+            var category = await client
+                .For<Category>()
+                .Set(new CategoryWithICollection
+                {
+                    CategoryName = "Test5",
+                    Products = new System.Collections.Generic.HashSet<Product>
+                    {
+                        new Product { ProductName = "Test7", UnitPrice = 14m, Category = new Category { CategoryID = 6 } },
+                        new Product { ProductName = "Test8", UnitPrice = 16m },
+                        new Product { ProductName = "Test9", UnitPrice = 18m }
+                    }
+                })
+                .Include(x => x.Products)
+                .InsertEntryAsync();
+
+            //var category = await client
+            //    .For<Category>()
+            //    .Set(new
+            //    {
+            //        CategoryName = "Test5",
+            //        Products = new[]
+            //        {
+            //            new { ProductName = "Test7", UnitPrice = 18m },
+            //            new { ProductName = "Test8", UnitPrice = 18m },
+            //            new { ProductName = "Test9", UnitPrice = 18m }
+            //        }
+            //    })
+            //    .InsertEntryAsync();
+
+            //var product = await client
+            //    .For<Product>()
+            //    .Set(new { ProductName = "Test6", UnitPrice = 18m, Category = category })
+            //    .InsertEntryAsync();
+
+            //Assert.Equal("Test6", product.ProductName);
+            //Assert.Equal(category.CategoryID, product.CategoryID);
+            category = await client
+                .For<Category>()
+                .Expand(x => new { x.Products })
+                .Filter(x => x.CategoryName == "Test5")
+                .FindEntryAsync();
+            Assert.True(category.Products.Count() == 3);
+        }
+
+        [Fact]
         public async Task InsertCategoryWithPictureAsBytes()
         {
             var client = new ODataClient(CreateDefaultSettings().WithHttpMock());
             var category = await client
                 .For<Category>()
-                .Set(new { CategoryName = "Test7", Picture = new byte[] {1,2,3,4,5} })
+                .Set(new { CategoryName = "Test7", Picture = new byte[] { 1, 2, 3, 4, 5 } })
                 .InsertEntryAsync();
 
             category = await client
@@ -124,7 +178,7 @@ namespace Simple.OData.Client.Tests.FluentApi
                 .FindEntryAsync();
             Assert.True(category.Picture.Length > 0);
         }
-        
+
         [Fact]
         public async Task InsertShip()
         {

@@ -30,7 +30,7 @@ namespace Simple.OData.Client
         public async Task<ODataRequest> CreateGetRequestAsync(string commandText, bool scalarResult)
         {
             await WriteEntryContentAsync(
-                RestVerbs.Get, Utils.ExtractCollectionName(commandText), commandText, null, true).ConfigureAwait(false);
+                RestVerbs.Get, Utils.ExtractCollectionName(commandText), commandText, null, null, true).ConfigureAwait(false);
 
             var request = new ODataRequest(RestVerbs.Get, _session, commandText)
             {
@@ -53,6 +53,14 @@ namespace Simple.OData.Client
 
         public async Task<ODataRequest> CreateInsertRequestAsync(string collection, string commandText, IDictionary<string, object> entryData, bool resultRequired)
         {
+            return await CreateInsertRequestAsync(collection, commandText, entryData, null, resultRequired).ConfigureAwait(false);
+        }
+
+        public async Task<ODataRequest> CreateInsertRequestAsync(string collection, string commandText, IDictionary<string, object> entryData, IList<string> includedProperties, bool resultRequired)
+        {
+            var entityCollection = _session.Metadata.GetEntityCollection(collection);
+            var entryDetails = _session.Metadata.ParseEntryDetails(entityCollection.Name, entryData);
+            
             var segments = commandText.Split('/');
             if (segments.Count() > 1 && segments.Last().Contains("."))
             {
@@ -60,7 +68,7 @@ namespace Simple.OData.Client
             }
 
             var entryContent = await WriteEntryContentAsync(
-                RestVerbs.Post, collection, commandText, entryData, resultRequired).ConfigureAwait(false);
+                RestVerbs.Post, collection, commandText, entryData, includedProperties, resultRequired).ConfigureAwait(false);
 
             var request = new ODataRequest(RestVerbs.Post, _session, commandText, entryData, entryContent)
             {
@@ -85,7 +93,7 @@ namespace Simple.OData.Client
             updateMethod = _session.Settings.PreferredUpdateMethod == ODataUpdateMethod.Merge ? RestVerbs.Merge : updateMethod;
 
             var entryContent = await WriteEntryContentAsync(
-                updateMethod, collection, entryIdent, entryData, resultRequired).ConfigureAwait(false);
+                updateMethod, collection, entryIdent, entryData, null, resultRequired).ConfigureAwait(false);
 
 
 
@@ -104,7 +112,7 @@ namespace Simple.OData.Client
         public async Task<ODataRequest> CreateDeleteRequestAsync(string collection, string entryIdent)
         {
             await WriteEntryContentAsync(
-                RestVerbs.Delete, collection, entryIdent, null, false).ConfigureAwait(false);
+                RestVerbs.Delete, collection, entryIdent, null, null, false).ConfigureAwait(false);
 
             var request = new ODataRequest(RestVerbs.Delete, _session, entryIdent)
             {
@@ -134,7 +142,7 @@ namespace Simple.OData.Client
         public async Task<ODataRequest> CreateUnlinkRequestAsync(string collection, string linkName, string entryIdent, string linkIdent)
         {
             var associationName = _session.Metadata.GetNavigationPropertyExactName(collection, linkName);
-            await WriteEntryContentAsync(RestVerbs.Delete, collection, entryIdent, null, false).ConfigureAwait(false);
+            await WriteEntryContentAsync(RestVerbs.Delete, collection, entryIdent, null, null, false).ConfigureAwait(false);
 
             var commandText = FormatLinkPath(entryIdent, associationName, linkIdent);
             var request = new ODataRequest(RestVerbs.Delete, _session, commandText)
@@ -184,7 +192,7 @@ namespace Simple.OData.Client
             return request;
         }
 
-        protected abstract Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, bool resultRequired);
+        protected abstract Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, IList<string> includedProperties, bool resultRequired);
         protected abstract Task<Stream> WriteLinkContentAsync(string method, string commandText, string linkIdent);
         protected abstract Task<Stream> WriteFunctionContentAsync(string method, string commandText);
         protected abstract Task<Stream> WriteActionContentAsync(string method, string commandText, string actionName, string boundTypeName, IDictionary<string, object> parameters);

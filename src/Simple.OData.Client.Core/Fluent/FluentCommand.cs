@@ -495,6 +495,15 @@ namespace Simple.OData.Client
             return this;
         }
 
+        public FluentCommand Include(string name)
+        {
+            if (IsBatchResponse)
+                return this;
+
+            _details.IncludedNavigationEntries.Add(name);
+            return this;
+        }
+
         public FluentCommand Set(object value)
         {
             if (IsBatchResponse) return this;
@@ -606,16 +615,36 @@ namespace Simple.OData.Client
             }
         }
 
+        public class IncludedDataWrapper
+        {
+            public object Data { get; set; }
+
+            public IncludedDataWrapper(object data)
+            {
+                this.Data = data;
+            }
+        }
+
         internal IDictionary<string, object> CommandData
         {
             get
             {
                 if (_details.EntryData == null)
                     return new Dictionary<string, object>();
-                if (string.IsNullOrEmpty(_details.DynamicPropertiesContainerName))
-                    return _details.EntryData;
 
                 var entryData = new Dictionary<string, object>();
+                //if (_details.IncludedNavigationEntries != null)
+                //{
+                //    foreach (string key in _details.EntryData.Keys.Where(x => _details.IncludedNavigationEntries.Contains(x, StringComparer.OrdinalIgnoreCase)))
+                //    {
+                //        entryData.Add(key, new IncludedDataWrapper(_details.EntryData[key]));
+                //    }
+                //}
+
+
+                if (string.IsNullOrEmpty(_details.DynamicPropertiesContainerName))
+                    return _details.EntryData;
+                
                 foreach (var key in _details.EntryData.Keys.Where(x => 
                     !string.Equals(x, _details.DynamicPropertiesContainerName, StringComparison.OrdinalIgnoreCase)))
                 {

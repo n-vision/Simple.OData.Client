@@ -9,6 +9,7 @@ namespace Simple.OData.Client
         public string LinkName { get; set; }
         public object LinkData { get; set; }
         public string ContentId { get; set; }
+        public bool Included { get; set; }
     }
 
     public class EntryDetails

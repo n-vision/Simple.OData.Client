@@ -525,6 +525,8 @@ namespace Simple.OData.Client
         /// <returns>Self.</returns>
         IBoundClient<T> Set(T entry, Expression<Func<T, object>> associationsToSetByValue);
 
+        IBoundClient<T> Include(Expression<Func<T, object>> expression);
+
         /// <summary>
         /// Gets a value indicating whether the OData command filter represent the entry key.
         /// </summary>
